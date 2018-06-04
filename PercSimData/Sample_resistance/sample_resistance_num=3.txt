@@ -1,0 +1,4 @@
+Occupation Probability	Resistance
+0.55	0.0
+0.77	43.1659032527882
+0.99	33.78939170161577
