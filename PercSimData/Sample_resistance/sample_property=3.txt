@@ -1,0 +1,4 @@
+Number of Paths	Resistance	Occupation Probability
+0.0	0.0	0.5
+12.666666666666666	12.877848904780656	0.745
+20.0	5.66347801452429	0.99
