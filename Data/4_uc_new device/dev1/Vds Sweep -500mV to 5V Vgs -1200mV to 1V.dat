@@ -1,0 +1,7 @@
+Control-file: C:\Users\ne-user\Desktop\Bagas_4uc_FET\Work Parameters\New_Dev\Vds-Sweep -500mV to 5V Vgs -2500mV to 1V.ctrl
+
+Series Value
+K2400-V -1.200122E+0 [V]
+
+time[s]		K2400-V [V]	K2400-2-V [V]	 K2400-I [A]	K2400-2-I [A]	
+2.200000E-2	-1.200125E+0	1.357360E-4	-1.432441E-8	6.823151E-9
