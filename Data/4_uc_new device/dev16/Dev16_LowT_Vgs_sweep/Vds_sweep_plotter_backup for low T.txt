@@ -1,0 +1,107 @@
+# Vds variable plotter
+# %matplotlib notebook
+def wrapper_vds(dataframe):
+    dataframe.drop('Unnamed: 5', axis=1,inplace=True)
+    dataframe.columns = ['time','Vgs','Vds','Igs','Ids']
+    return dataframe
+
+def new_range(start,end,step):
+    i = start
+    while i < end:
+        yield i
+        i += step
+    yield end
+    
+def find_nearest(array, value):
+    array = np.asarray(array)
+    idx = (np.abs(array - value)).argmin()
+    return idx
+
+def quadratic_fitting(x, a, b):
+    y = a*(x-b)**2
+    return y
+
+def plus_string(number):
+    if number < 0:
+        x = '$-$' + str(round(abs(number), 2))
+    elif number > 0:
+        x = '+' + str(round(number, 2))
+    return x
+
+fig1 = plt.figure(1)
+ax = fig1.add_subplot(1, 1, 1)  
+
+fig2 = plt.figure(2)
+ax2 = fig2.add_subplot(1, 1, 1)  
+
+# fig3 = plt.figure(3)
+# ax3 = fig2.add_subplot(1, 1, 1)  
+
+V_sat_data = []
+for i in new_range(1, 31, 1):    # set number of data here: 
+    
+    # df1 = pd.read_csv('Data\\dev15\\dev15_vsd\\dev15_dataset'+str(i)+'.txt',sep='\t',skiprows = [0,1,2])
+    df2 = pd.read_csv('Data\\4_uc_new device\\dev16\\Dev16_LowT_Vds_sweep\\dev16_dataset'+str(i)+'.txt',sep='\t',skiprows = [0,1,2])
+    
+    # df_wrap1 = wrapper_vds(df1)
+    df_wrap2 = wrapper_vds(df2)
+    
+    Vgs = -1.5 + (0.1*i-0.1)
+    Ids_list = df_wrap2['Ids'] # Still in ampere
+    Vds_list = df_wrap2['Vds']
+    V_sat_index = find_nearest(Vds_list[1:1200], Vgs+1.8)
+    V_sat_data.append((Vds_list[V_sat_index], Ids_list[V_sat_index]/10**(-6)))
+    
+    Igs_smooth = savgol_filter(df_wrap2['Igs'],99,3)  # Filter out noise with savgol filter
+    ax.plot(df_wrap2['Vds'], df_wrap2['Ids']/(10)**(-6), label = 'Vgs ='+str(round(Vgs,2))+' V')
+    if Vgs >= 1.45: 
+        ax.text(0.5+0.01, Ids_list[303]/(10)**(-6), plus_string(Vgs),  withdash=False, fontsize=9)
+    elif Vgs <= -0.5:
+        ax.text(0.5+0.01, Ids_list[303]/(10)**(-6), plus_string(Vgs),  withdash=False, fontsize=9)
+        
+    ax2.plot(df_wrap2['Vds'], Igs_smooth/(10**(-6)), label = 'Vgs ='+str(round(Vgs,2))+' V') # Ig is in micro-amps
+    
+    
+
+# Vds_tuple, Ids_tuple = zip(*V_sat_data)
+# popt, pcov = curve_fit(quadratic_fitting, Vds_tuple, Ids_tuple)
+# print(popt)
+# Vds_new = np.linspace(popt[1], 5, num = 100, endpoint=True)
+# Ids_new = quadratic_fitting(Vds_new, *popt)
+# # ax.plot(Vds_tuple,Ids_tuple)
+# ax.plot(Vds_new, Ids_new)
+# ax.scatter(Vds_tuple, Ids_tuple)
+
+
+## Plot setting for fig1 (Id vs Vds)
+# ax.set_title('100$\mu m^2$ Gate Area')
+ax.set_xlabel('$V_{ds}$ [V]', fontsize=10)
+ax.set_ylabel('$I_{d}$ [$\mu$A]', fontsize=10)
+# ax.legend(bbox_to_anchor=(1.05, 1), loc=2)
+ax.set_xlim(-0.5, 0.5)    
+ax.set_ylim(-20,)
+
+ax.minorticks_on()
+ax.tick_params(axis = 'y', which = 'both', length=5, direction='in')
+ax.tick_params(axis = 'both', which = 'minor', labelsize = 9)
+ax.text(0.5+0.01, 110, ' $V_{gs}$ [V]',  withdash=False, fontsize=9) # Vgs label is set manually
+fig1.set_size_inches(plot_width*1.1, plot_height*1.4)
+fig1.savefig('Figures\\Dev16_LowT_Vds_sweep-Ids.pdf', format='pdf', bbox_inches='tight')
+    
+    
+## plot setting for fig2 (Ig vs Vds)
+ax2.legend(prop={'size': 8}, loc=1, bbox_to_anchor=(1,1), bbox_transform=ax2.transAxes)
+# ax2.set_title('100$\mu m^2$ Gate Area')
+ax2.set_xlabel('$V_{ds}$ [V]', fontsize=10)
+ax2.set_ylabel('$I_{g}$ [$\mu$A]', fontsize=10)
+ax2.minorticks_on()
+ax2.tick_params(axis = 'y', which = 'both', length=5, direction='in')
+ax2.legend(bbox_to_anchor=(1.05, 1), loc=2)
+
+ax2.tick_params(axis = 'both', which = 'minor', labelsize = 9)
+fig2.set_size_inches(plot_width*1.1, plot_height*1.4)
+
+fig2.savefig('Figures\\Dev16_LowT_Vds_sweep-Igs.pdf', format='pdf', bbox_inches='tight')
+
+# Fig 3 setting
+

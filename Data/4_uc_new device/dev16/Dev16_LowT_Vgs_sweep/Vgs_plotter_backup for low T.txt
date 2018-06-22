@@ -1,0 +1,103 @@
+####
+# Vgs transistor characterstic plotter - plot Vgs sweep characetristic, find the subthreshold swing with exponential
+#                                       Curve fit
+###
+def wrapper_vgs(dataframe):
+    dataframe.drop('Unnamed: 5', axis=1,inplace=True)
+    dataframe.columns = ['time','Vds','Vgs','Ids','Igs']
+    return dataframe
+
+def exponent_fit(x, b, c):
+    return 10**(b*x+c)
+
+def Vgs_plotter(data_location, loop_var1, loop_var2):
+    data_linspace = np.round(np.linspace(-0.5,0.5, num = 21),2)  #set the data linspace for proper range
+    gradient = []
+    Vds_arr = []
+    on_off_rat = [] 
+    for i in range(loop_var1, loop_var2):
+        df = pd.read_csv(data_location + str(i) + '.txt', sep='\t', skiprows = [0,1,2])
+        df_wrap = wrapper_vgs(df)
+        
+        fig1 = plt.figure(1)
+        plt.plot( df_wrap['Vgs'], df_wrap['Igs']/(10)**(-6), label = 'Vds =' + str(data_linspace[i-1]) + 'V')
+        plt.legend(prop={'size': 8})
+        plt.xlabel('$V_{gs}$ [V]', fontsize=10)
+        plt.ylabel('$I_{d}$ [$\mu$A]', fontsize=10)
+        ax = plt.gca()
+        ax.tick_params(axis = 'both', which = 'both', length=5, direction='in')
+        ax.minorticks_on()
+        ax.tick_params(axis='both', which='minor', length=3)
+        fig1.set_size_inches(plot_width , plot_height*1.3)
+
+        
+        fig2 = plt.figure(2)
+        plt.plot( df_wrap['Vgs'], (df_wrap['Ids']/(10)**(-6)), label = 'Vds =' + str(data_linspace[i-1]) + 'V')
+        plt.legend(prop={'size': 8})
+        plt.xlabel('$V_{gs}$ [V]', fontsize=10)
+        plt.ylabel('$I_{g}$ [$\mu$A]', fontsize=10)
+        ax2 = plt.gca()
+        ax2.tick_params(axis = 'both', which = 'both', length=5, direction='in')
+        ax2.minorticks_on()
+        ax2.tick_params(axis='both', which='minor', length=3)
+        fig2.set_size_inches(plot_width, plot_height*1.3)
+        
+        
+        fig3 = plt.figure(3)
+        Vgs_linspace = df_wrap['Vgs']
+        Ids_data = df_wrap['Igs']/10**(-6)  # Ids Data is in micro amps
+        popt, pcov = curve_fit(exponent_fit, Vgs_linspace[610:625], Ids_data[610:625])
+        Vgs_new = np.linspace(-1.2, -0.9, endpoint=True)
+        Ids_new = exponent_fit(Vgs_new, *popt)
+        
+        plt.semilogy(Vgs_linspace[0:650], Ids_data[0:650], label = 'Vds =' + str(data_linspace[i-1]) + 'V')
+        plt.semilogy(Vgs_new, Ids_new, linewidth=1 , linestyle = 'dashed')
+        plt.legend(prop={'size': 8})
+        plt.xlabel('$V_{gs}$ [V]', fontsize=10)
+        plt.ylabel('$I_{d}$ [$\mu$A]', fontsize=10)
+        ax3 = plt.gca()
+        ax3.tick_params(axis = 'both', which = 'both', length=5, direction='in')
+        ax3.minorticks_on()
+        ax3.tick_params(axis='both', which='minor', length=3)
+        ax3.legend(bbox_to_anchor=(1.05, 1), loc=2)
+
+        fig3.set_size_inches(plot_width, plot_height*1.3)
+
+
+        gradient.append(((Vgs_new[-1] - Vgs_new[0])*1000)/(np.log10(Ids_new[-1])-np.log10(Ids_new[0])))
+        on_off_rat.append(Ids_data[1000]/Ids_data[650]) # set the on-off ratio properly too
+        Vds_arr.append(data_linspace[i-1])
+        
+    fig4 = plt.figure(4)
+    ax4 = fig4.add_subplot(111) 
+    ax5 = ax4.twinx()
+    ax4.plot(Vds_arr, gradient, '-o', color='r',label='Subthreshold')
+    ax5.plot(Vds_arr, on_off_rat, '-^', color='b', label='on/off ratio')
+    
+    
+    ax4.tick_params(axis = 'both', which = 'both', length=5, direction='in')
+    ax4.minorticks_on()
+    ax4.set_xlabel('$V_{ds}$ [V]', fontsize=10)
+    ax4.set_ylabel('$S_{s-th}$ [mV/dec]', fontsize=10)
+    ax4.tick_params(axis='both', which='minor', length=3)
+    
+    ax5.tick_params(axis = 'both', which = 'both', length=5, direction='in')
+    ax5.minorticks_on()
+    ax5.set_xlabel('$V_{ds}$ [V]', fontsize=10)
+    ax5.set_ylabel('On/Off $I_d$ ratio', fontsize=10)
+    ax5.tick_params(axis='both', which='minor', length=3)
+    
+    fig4.legend(prop={'size': 8}, loc=1, bbox_to_anchor=(1,0.30), bbox_transform=ax4.transAxes)
+  
+    fig4.set_size_inches(plot_width , plot_height*1.4)
+#     fig4.savefig('Figures\\Dev16_lowT_Subth-on-off.pdf', format='pdf', bbox_inches='tight')
+#     fig1.savefig('Figures\\Dev16_lowT_Vgs_sweep-Ids.pdf', format='pdf', bbox_inches='tight')
+#     fig2.savefig('Figures\\Dev16_lowT_Vgs_sweep-Igs.pdf', format='pdf', bbox_inches='tight')
+
+    
+
+
+# change data set! might be switched. Check what Id of the source K200 K200-2
+Vgs_plotter('Data\\4_uc_new device\\dev16\\Dev16_LowT_Vgs_sweep\\dev16_dataset', 12, 22) #12 max
+
+# plt.savefig('Figures\\percprob_vs_occprob.pdf', format='pdf', dpi=300)
